@@ -32,14 +32,8 @@ if (Meteor.isClient) {
   });
 
   Template.lightboard.events({
-    'mousedown .lb-draw': function(event) {
-      Template.instance().isSelecting = true;
-    },
-    'mouseup': function(event) {
-      Template.instance().isSelecting = false;
-    },
     'mousemove .lb-draw': function(event) {
-      if (Template.instance().isSelecting) {
+      if (event.which == 1) {
         var xstep = Template.instance().xstep;
         var ystep = Template.instance().ystep;
         var dotsx = Template.instance().dotsx;
