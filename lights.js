@@ -52,35 +52,63 @@ if (Meteor.isClient) {
   });
 
   Template.lightboard.events({
-    'mousemove .dotmatrix': function(event) {
-      if (event.which == 1) {
-        // TODO: Generalize
-        var xstep = 30;
-        var ystep = 30;
-        var dotsx = 10;
-
-        var bb = $('.dotmatrix').offset();
-        var x = Math.floor((event.clientX - bb.left) / xstep);
-        var y = Math.floor((event.clientY - bb.top)  / ystep);
-        var dot = {};
-        var remove = {};
-
-        var key = 'dots.' + (x + y * dotsx);
-        dot[key] = 'white';
-        remove[key] = {};
-
-        Lights.update({ _id: 1 }, {
-          $set: dot
-        });
-
-        setTimeout(function() {
-          Lights.update({ _id: 1 }, {
-            $set: remove
-          });
-        }, 800);
-      }
+    'mousedown .dotmatrix': function(event) {
+      // event.preventDefault();
     },
+    'mousemove .dotmatrix': function(event) {
+
+    }
+  })
+
+
+  Template.lightboard.onRendered(function() {
+
+    var hammertime = new Hammer(this.$('.dotmatrix').get(0));
+    hammertime.get('pan').set({
+      direction: Hammer.DIRECTION_ALL
+    });
+
+    hammertime.on('pan', function(event) {
+      event.preventDefault();
+      console.log("event");
+      // TODO: do not calculate every time
+      var bb = $('.dotmatrix').offset();
+      var x = event.center.x - bb.left;
+      var y = event.center.y - bb.top;
+
+      if (x >= 0 && y >= 0) {
+        setTimeout(function() {
+          drawLight(x, y);
+        }, 0);
+      }
+    });
   });
+
+  var drawLight = function(x, y) {
+    // TODO: Generalize
+    var xstep = 30;
+    var ystep = 30;
+    var dotsx = 10;
+
+    x = Math.floor(x / xstep);
+    y = Math.floor(y / ystep);
+    var dot = {};
+    var remove = {};
+
+    var key = 'dots.' + (x + y * dotsx);
+    dot[key] = 'white';
+    remove[key] = {};
+
+    Lights.update({ _id: 1 }, {
+      $set: dot
+    });
+
+    setTimeout(function() {
+      Lights.update({ _id: 1 }, {
+        $set: remove
+      });
+    }, 800);
+  }
 }
 
 if (Meteor.isServer) {
