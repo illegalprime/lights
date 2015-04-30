@@ -2,15 +2,9 @@
 
 canvas {
   background-color: black;
-  width: 300px;
-  margin: 0 auto;
-  left: 50%;
 }
 
 body {
-  background-color: black;
+  background-color: grey;
 }
 
-h1 {
-  color: white;
-}

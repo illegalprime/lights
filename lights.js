@@ -8,54 +8,6 @@ Lights.upsert({ _id: 1 }, {
 })
 
 if (Meteor.isClient) {
-  // counter starts at 0
-  Session.setDefault('counter', 0);
-
-  Template.hello.helpers({
-    counter: function () {
-      return Session.get('counter');
-    }
-  });
-
-  Template.hello.events({
-    'click button': function () {
-      // increment the counter when button is clicked
-      Session.set('counter', Session.get('counter') + 1);
-    }
-  });
-
-  Template.lightboard.helpers({
-      board: function() {
-          // TODO: Multiple boards?
-          return "not-implemented";
-      }
-  });
-
-  Template.lightboard.events({
-    'mousedown .lb-draw': function(event) {
-      Template.instance().isSelecting = true;
-    },
-    'mouseup': function(event) {
-      Template.instance().isSelecting = false;
-    },
-    'mousemove .lb-draw': function(event) {
-      if (Template.instance().isSelecting) {
-        var xstep = Template.instance().xstep;
-        var ystep = Template.instance().ystep;
-        var dotsx = Template.instance().dotsx;
-
-        var bb = event.target.getBoundingClientRect();
-        var x = Math.floor((event.clientX - bb.left) / xstep);
-        var y = Math.floor((event.clientY - bb.top)  / ystep);
-        var dot = {};
-        dot[x + y * dotsx] = 'white';
-
-        Lights.update({ _id: 1 }, {
-          $set: dot
-        });
-      }
-    },
-  });
 
   Template.lightboard.onRendered(function() {
       var canvas = Template.instance().$(".lb-draw").get(0);
@@ -84,42 +36,53 @@ if (Meteor.isClient) {
       var ystep = height / dotsy;
       var r     = Math.min(xstep, ystep) / 2 - padding;
 
-      // TODO: Make reactive
-      // Set vars for the event handling
-      Template.instance().dotsx = dotsx;
-      Template.instance().dotsy = dotsy;
-      Template.instance().xstep = xstep;
-      Template.instance().ystep = ystep;
+      var hammertime = new Hammer(canvas);
+      hammertime.get('pan').set({
+        direction: Hammer.DIRECTION_ALL,
+        threshold: 0
+      });
+      hammertime.on('pan', insertDot);
 
-      // Draw the grid!
-      // for (var x = xstep / 2, i = 0; x < width; x += xstep, ++i) {
-      //     for (var y = ystep / 2, j = 0; y < height; y += ystep, ++j) {
-      //       color = grid[i + j * dotsx] || 'green';
-      //       graphics.circle(x, y, r, color);
-      //     }
-      // }
+      canvas.addEventListener('touchmove', function(event) {
+          event.preventDefault();
+      }, false);
 
-      clearDot = function(x, y) {
+      function insertDot(event) {
+        var bb = event.target.getBoundingClientRect();
+        var x = Math.floor((event.center.x - bb.left) / xstep);
+        var y = Math.floor((event.center.y - bb.top)  / ystep);
+        var key = x + y * dotsx;
+        var dot = {};
+        var remove  = {};
+        dot[key] = 'white';
+        remove[key] = {};
+
+        Lights.update({ _id: 1 }, {
+          $set: dot
+        });
+
+        setTimeout(function() {
+          Lights.update({ _id: 1 }, {
+            $unset: remove
+          });
+        }, 800);
+      }
+
+      function clearDot(x, y) {
         graphics.clearRect(x, y, xstep, ystep);
       }
 
-      updateDot = function(x, y, color) {
+      function updateDot(x, y, color) {
+        if (x < 0 || y < 0 || x >= width || y >= width) {
+            return;
+        }
+
         clearDot(x, y);
 
         if (!color) {
           return;
         }
         graphics.circle(x + xstep / 2, y + ystep / 2, r, color);
-
-        setTimeout(function() {
-          var position = Math.floor(x / xstep) + Math.floor(y / ystep) * dotsx;
-          var dot = {};
-          dot[position] = 0;
-
-          Lights.update({ _id: 1 }, {
-            $set: dot
-          });
-        }, 1000);
       }
 
       // Listen for update changes
@@ -131,7 +94,7 @@ if (Meteor.isClient) {
             updateDot(i * xstep, j * ystep, fields[key]);
           }
         }
-      })
+      });
   });
 }
 
