@@ -63,6 +63,18 @@ if (Meteor.isClient) {
 
   Template.lightboard.onRendered(function() {
 
+    var hammertime = new Hammer($('canvas').get(0))
+    hammertime.get('pan').set({
+        direction: Hammer.DIRECTION_ALL
+    });
+    hammertime.on('pan', function(event) {
+        graphics = $('canvas').get(0).getContext("2d");
+        var off = $('canvas').offset();
+        var x = event.center.x - off.left;
+        var y = event.center.y - off.top;
+        graphics.fillRect(x, y, 10, 10);
+    });
+
     var hammertime = new Hammer(this.$('.dotmatrix').get(0));
     hammertime.get('pan').set({
       direction: Hammer.DIRECTION_ALL
