@@ -42,6 +42,7 @@ if (Meteor.isClient) {
         threshold: 0
       });
       hammertime.on('pan', insertDot);
+      hammertime.on('tap', insertDot);
 
       canvas.addEventListener('touchmove', function(event) {
           event.preventDefault();
