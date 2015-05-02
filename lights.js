@@ -89,7 +89,7 @@ if (Meteor.isClient) {
 
     function resizeToFit() {
       var bb = tmpl.$('.lb-overlay').offset();
-      var width = Math.min($(this).width() - bb.left, $(this).height() - bb.top);
+      var width = Math.min($(this).width() - bb.left, $(this).height() - bb.top) - bb.left;
       console.log(width);
       tmpl.width.set(width);
       tmpl.height.set(width);

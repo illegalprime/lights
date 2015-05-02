@@ -4,6 +4,13 @@
   fill: blue;
 }
 
+body {
+  background-color: black;
+}
+
 .lb-grid {
   background-color: black;
+  border: solid;
+  border-color: blue;
+  border-width: 1px;
 }
