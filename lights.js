@@ -9,118 +9,84 @@ Lights.upsert({ _id: 1 }, {
 
 if (Meteor.isClient) {
 
-  Template.lightboard.helpers({
-      dots: function() {
-        var svgDom = document.createElement('svg');
-        var svg = d3.select(svgDom);
-        // TODO: To be generalized later
-        var width = 300;
-        var height = 300;
-        svgDom.setAttribute('width',  width);
-        svgDom.setAttribute('height', height);
-        svgDom.className = 'dotmatrix';
-
-        grid = Lights.find({ _id: 1 }).fetch()[0];
-
-        // Crunch the numbers
-        var dotsx = grid.sizex;
-        var dotsy = grid.sizey;
-        var padding = grid.padding; // Padding between circles
-        var xstep = width / dotsx;
-        var ystep = height / dotsy;
-        var dots = [];
-
-        if (grid.dots) {
-          for (coor in grid.dots) {
-            dots.push({
-              x: (coor % dotsx ) * xstep + (xstep / 2),
-              y: Math.floor(coor / dotsx) * ystep + (ystep / 2),
-              color: grid.dots[coor]
-            });
-          }
-        }
-
-        var circle = svg.selectAll('circle').data(dots);
-        var circles = circle.enter().append('circle');
-
-        circles.attr('cx', function(d) { return d.x; });
-        circles.attr('cy', function(d) { return d.y; });
-        circles.style('fill', function(d) { return d.color });
-        circles.attr('r', Math.min(xstep, ystep) / 2 - padding);
-        return svgDom.outerHTML;
-      }
+  Template.lightboard.onCreated(function() {
+    this.width  = new ReactiveVar(500);
+    this.height = new ReactiveVar(500);
+    this.id     = new ReactiveVar(1);
   });
 
-  Template.lightboard.events({
-    'mousedown .dotmatrix': function(event) {
-      // event.preventDefault();
+  Template.lightboard.helpers({
+    dots: function() {
+      var grid = Lights.find({ _id: Template.instance().id.get() }).fetch()[0];
+      var padding = grid.padding;
+      var dotsx = grid.sizex;
+      var dotsy = grid.sizey;
+      var xstep = Template.instance().width.get()  / dotsx;
+      var ystep = Template.instance().height.get() / dotsy;
+      var xbump = xstep / 2;
+      var ybump = ystep / 2;
+      var r = Math.min(xbump, ybump) - padding;
+      var dots = [];
+
+      for (key in grid.dots) {
+        dots.push({
+          x: (key % dotsx) * xstep + xbump,
+          y: Math.floor(key / dotsx) * xstep + xbump,
+          r: r
+        });
+      }
+
+      return dots;
     },
-    'mousemove .dotmatrix': function(event) {
 
+    width: function() {
+      return Template.instance().width.get();
+    },
+
+    height: function() {
+      return Template.instance().height.get();
     }
-  })
-
+  });
 
   Template.lightboard.onRendered(function() {
+    var tmpl = this;
 
-    var hammertime = new Hammer($('canvas').get(0))
-    hammertime.get('pan').set({
-        direction: Hammer.DIRECTION_ALL
-    });
-    hammertime.on('pan', function(event) {
-        graphics = $('canvas').get(0).getContext("2d");
-        var off = $('canvas').offset();
-        var x = event.center.x - off.left;
-        var y = event.center.y - off.top;
-        graphics.fillRect(x, y, 10, 10);
-    });
+    function toggleDot(event) {
+      var grid = Lights.find({ _id: tmpl.id.get() }).fetch()[0];
+      var dotsx = grid.sizex;
+      var dotsy = grid.sizey;
+      var xstep = tmpl.width.get()  / dotsx;
+      var ystep = tmpl.height.get() / dotsy;
 
-    var hammertime = new Hammer(this.$('.dotmatrix').get(0));
-    hammertime.get('pan').set({
-      direction: Hammer.DIRECTION_ALL
-    });
+      var bb = event.target.getBoundingClientRect();
+      var x = Math.floor((event.center.x - bb.left) / xstep);
+      var y = Math.floor((event.center.y - bb.top)  / ystep);
 
-    hammertime.on('pan', function(event) {
-      event.preventDefault();
-      console.log("event");
-      // TODO: do not calculate every time
-      var bb = $('.dotmatrix').offset();
-      var x = event.center.x - bb.left;
-      var y = event.center.y - bb.top;
+      var key = x + y * dotsx;
+      var dot = {};
+      dot['dots.' + key] = true;
 
-      if (x >= 0 && y >= 0) {
-        setTimeout(function() {
-          drawLight(x, y);
-        }, 0);
+      if (tmpl.lastkey != key) {
+        Lights.update({ _id: tmpl.id.get() },
+          grid.dots && grid.dots[key] ? { $unset: dot } : { $set: dot }
+        );
       }
+
+      tmpl.lastkey = key;
+    }
+
+    var hammertime = new Hammer(this.$('.lb-overlay')[0]);
+    hammertime.get('pan').set({
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 0
     });
+    hammertime.on('pan', toggleDot);
+    hammertime.on('tap', toggleDot);
+
+    this.$('.lb-overlay')[0].addEventListener('touchmove', function(event) {
+        event.preventDefault();
+    }, false);
   });
-
-  var drawLight = function(x, y) {
-    // TODO: Generalize
-    var xstep = 30;
-    var ystep = 30;
-    var dotsx = 10;
-
-    x = Math.floor(x / xstep);
-    y = Math.floor(y / ystep);
-    var dot = {};
-    var remove = {};
-
-    var key = 'dots.' + (x + y * dotsx);
-    dot[key] = 'white';
-    remove[key] = {};
-
-    Lights.update({ _id: 1 }, {
-      $set: dot
-    });
-
-    setTimeout(function() {
-      Lights.update({ _id: 1 }, {
-        $set: remove
-      });
-    }, 800);
-  }
 }
 
 if (Meteor.isServer) {

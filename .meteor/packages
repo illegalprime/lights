@@ -8,3 +8,5 @@ meteor-platform
 autopublish
 insecure
 d3js:d3
+reactive-var
+hammer:hammer

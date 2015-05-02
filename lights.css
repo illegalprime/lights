@@ -1,15 +1,9 @@
 /* CSS declarations go here */
 
-svg {
+.lb-dot-active {
+  fill: blue;
+}
+
+.lb-grid {
   background-color: black;
-  border-style: solid;
-  border-color: white;
-}
-
-body {
- /*  background-color: black; */
-}
-
-h1 {
-  color: white;
 }

@@ -3,10 +3,32 @@
 </head>
 
 <body>
-  {{> lightboard}}
+  {{> lightboard }}
 </body>
 
 <template name="lightboard">
-    <canvas width='500px' height='500px'></canvas>
-    {{{ dots }}}
+  <div class="lb-container">
+    <svg class="lb-grid" height="{{height}}" width="{{width}}">
+      {{#each dots }}
+        <circle r="{{r}}" class="lb-dot-active" cy="{{y}}" cx="{{x}}"></circle>
+      {{/each}}
+    </svg>
+    <div class="lb-overlay"></div>
+  </div>
+
+  <style type="text/css">
+    .lb-container {
+      position: relative;
+    }
+    .lb-grid {
+      position: absolute;
+      z-index: 0;
+    }
+    .lb-overlay {
+      position: absolute;
+      z-index: 1;
+      width: {{width}}px;
+      height: {{height}}px;
+    }
+  </style>
 </template>
