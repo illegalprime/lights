@@ -86,6 +86,17 @@ if (Meteor.isClient) {
     this.$('.lb-overlay')[0].addEventListener('touchmove', function(event) {
         event.preventDefault();
     }, false);
+
+    function resizeToFit() {
+      var bb = tmpl.$('.lb-overlay').offset();
+      var width = Math.min($(this).width() - bb.left, $(this).height() - bb.top);
+      console.log(width);
+      tmpl.width.set(width);
+      tmpl.height.set(width);
+    }
+
+    $(window).resize(resizeToFit);
+    resizeToFit.bind(window)();
   });
 }
 
